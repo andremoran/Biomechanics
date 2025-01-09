@@ -1,0 +1,77 @@
+Si tienes un video pregrabado desde dos ángulos diferentes, podrías usar eso en lugar de una cámara en vivo:
+
+const videoElement1 = document.getElementById('video1');
+const videoElement2 = document.getElementById('video2');
+
+videoElement1.src = 'path/to/video1.mp4';
+videoElement2.src = 'path/to/video2.mp4';
+
+videoElement1.onloadedmetadata = () => {
+  videoElement1.play();
+  runHolistic1();
+};
+
+videoElement2.onloadedmetadata = () => {
+  videoElement2.play();
+  runHolistic2();
+};
+
+function runHolistic1() {
+  holistic1.send({image: videoElement1});
+  requestAnimationFrame(runHolistic1);
+}
+
+function runHolistic2() {
+  holistic2.send({image: videoElement2});
+  requestAnimationFrame(runHolistic2);
+}
+
+
+
+/////////////////////// con webcam
+const videoElement1 = document.getElementsByClassName('input_video')[0];
+const videoElement2 = document.getElementsByClassName('input_video2')[0];
+
+// ... resto del código ...
+
+async function setupCameras() {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+  if (videoDevices.length < 2) {
+    console.error('Se necesitan al menos dos cámaras');
+    return;
+  }
+
+  const stream1 = await navigator.mediaDevices.getUserMedia({
+    video: { deviceId: videoDevices[0].deviceId }
+  });
+  videoElement1.srcObject = stream1;
+
+  const stream2 = await navigator.mediaDevices.getUserMedia({
+    video: { deviceId: videoDevices[1].deviceId }
+  });
+  videoElement2.srcObject = stream2;
+
+  // Iniciar los holistic processors
+  const camera1 = new Camera(videoElement1, {
+    onFrame: async () => {
+      await holistic1.send({image: videoElement1});
+    },
+    width: 1280,
+    height: 720
+  });
+
+  const camera2 = new Camera(videoElement2, {
+    onFrame: async () => {
+      await holistic2.send({image: videoElement2});
+    },
+    width: 1280,
+    height: 720
+  });
+
+  camera1.start();
+  camera2.start();
+}
+
+setupCameras();

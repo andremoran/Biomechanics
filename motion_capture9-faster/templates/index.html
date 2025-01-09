@@ -1,0 +1,215 @@
+
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Biomechanical Motion Capture</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+
+                .header {
+            text-align: center;
+            padding: 20px;
+            background: #111;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            color: #fff;
+        }
+
+        .container {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .camera-section {
+            flex: 0.5;
+            min-width: 200px;
+        }
+
+        .camera-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .camera-container {
+            position: relative;
+            background: #111;
+            border-radius: 5px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            max-width: 200px;
+        }
+
+        .camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-panel {
+            background: #111;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .visualization-section {
+            flex: 1;
+            min-width: 400px;
+        }
+
+        #ktk-visualization {
+            background: #111;
+            border-radius: 10px;
+            width: 100%;
+            height: 600px;
+            object-fit: contain;
+        }
+
+        .metrics {
+            background: #111;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #444;
+        }
+
+        button.active {
+            background: #0066cc;
+        }
+
+        button.remove {
+            background: #cc0000;
+        }
+
+        button.remove:hover {
+            background: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ElectroBiomed</h1>
+    </div>
+
+    <div class="container">
+        <div class="camera-section">
+            <div class="camera-grid" id="camera-grid"></div>
+            <div class="control-panel">
+                <button onclick="toggleCamera(0)" id="btn0">Camera 1</button>
+                <button onclick="toggleCamera(1)" id="btn1">Camera 2</button>
+                <button onclick="toggleCamera(2)" id="btn2">Camera 3</button>
+            </div>
+        </div>
+
+        <div class="visualization-section">
+            <img id="ktk-visualization">
+            <div class="metrics">
+                <h3>Joint Angles</h3>
+                <div id="joint-metrics"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const activeCameras = new Set();
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('visualization_update', (data) => {
+            document.getElementById('ktk-visualization').src = 'data:image/png;base64,' + data.image;
+        });
+
+        function toggleCamera(id) {
+            const button = document.getElementById(`btn${id}`);
+            if (!activeCameras.has(id)) {
+                addCamera(id);
+                button.classList.add('active');
+            } else {
+                removeCamera(id);
+                button.classList.remove('active');
+            }
+        }
+
+        function addCamera(id) {
+            if (!activeCameras.has(id)) {
+                const grid = document.getElementById('camera-grid');
+                const container = document.createElement('div');
+                container.className = 'camera-container';
+                container.id = `camera-container-${id}`;
+
+                const video = document.createElement('img');
+                video.className = 'camera-feed';
+                video.src = `/video_feed/${id}`;
+
+                const controls = document.createElement('div');
+                controls.className = 'camera-controls';
+                controls.innerHTML = `<button class="remove" onclick="toggleCamera(${id})">×</button>`;
+
+                container.appendChild(video);
+                container.appendChild(controls);
+                grid.appendChild(container);
+                activeCameras.add(id);
+
+                socket.emit('start_camera', { camera_id: id });
+            }
+        }
+
+        function removeCamera(id) {
+            if (activeCameras.has(id)) {
+                const container = document.getElementById(`camera-container-${id}`);
+                container.remove();
+                activeCameras.delete(id);
+                socket.emit('stop_camera', { camera_id: id });
+            }
+        }
+
+        socket.on('camera_started', (data) => {
+            console.log(`Camera ${data.camera_id} started successfully`);
+        });
+
+        socket.on('camera_stopped', (data) => {
+            console.log(`Camera ${data.camera_id} stopped`);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+  function combineResults(results1, results2) {
+    // Crear un nuevo objeto para almacenar los resultados combinados
+    const combinedResults = {
+      poseLandmarks: [],
+      faceLandmarks: [],
+      leftHandLandmarks: [],
+      rightHandLandmarks: []
+    };
+  
+    // Combinar poseLandmarks
+    if (results1.poseLandmarks && results2.poseLandmarks) {
+      combinedResults.poseLandmarks = [...results1.poseLandmarks, ...results2.poseLandmarks];
+    }
+  
+    // Combinar faceLandmarks
+    if (results1.faceLandmarks && results2.faceLandmarks) {
+      combinedResults.faceLandmarks = [...results1.faceLandmarks, ...results2.faceLandmarks];
+    }
+  
+    // Combinar leftHandLandmarks
+    if (results1.leftHandLandmarks && results2.leftHandLandmarks) {
+      combinedResults.leftHandLandmarks = [...results1.leftHandLandmarks, ...results2.leftHandLandmarks];
+    }
+  
+    // Combinar rightHandLandmarks
+    if (results1.rightHandLandmarks && results2.rightHandLandmarks) {
+      combinedResults.rightHandLandmarks = [...results1.rightHandLandmarks, ...results2.rightHandLandmarks];
+    }
+  
+    return combinedResults;
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+///////////
+
+
+function drawResults(results, ctx, canvas) {
+  ctx.save();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Dibuja la imagen de la cámara 1 en el canvas
+  if (results.image) {
+    ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+  }
+  
+  // Dibuja landmarks de pose, cara y manos
+  if (results.poseLandmarks) {
+    drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {color: '#00FF00', lineWidth: 4});
+    drawLandmarks(ctx, results.poseLandmarks, {color: '#FF0000', lineWidth: 2});
+  }
+
+  if (results.faceLandmarks) {
+    drawConnectors(ctx, results.faceLandmarks, FACEMESH_TESSELATION, {color: '#C0C0C070', lineWidth: 1});
+  }
+
+  if (results.leftHandLandmarks) {
+    drawConnectors(ctx, results.leftHandLandmarks, HAND_CONNECTIONS, {color: '#CC0000', lineWidth: 5});
+    drawLandmarks(ctx, results.leftHandLandmarks, {color: '#00FF00', lineWidth: 2});
+  }
+
+  if (results.rightHandLandmarks) {
+    drawConnectors(ctx, results.rightHandLandmarks, HAND_CONNECTIONS, {color: '#00CC00', lineWidth: 5});
+    drawLandmarks(ctx, results.rightHandLandmarks, {color: '#FF0000', lineWidth: 2});
+  }
+
+  ctx.restore();
+}
+
+
+
+
+
+
+
+
+
+
+
+
